@@ -1,37 +1,10 @@
 (function(window){
   var urlCount = 0,
       NativeMediaSource = window.MediaSource || window.WebKitMediaSource || {},
+      EventTarget = videojs.EventTarget,
       nativeUrl = window.URL || {},
-      EventEmitter,
       flvCodec = /video\/flv(;\s*codecs=["']vp6,aac["'])?$/,
       objectUrlPrefix = 'blob:vjs-media-source/';
-
-  EventEmitter = function(){};
-  EventEmitter.prototype.init = function(){
-    this.listeners = [];
-  };
-  EventEmitter.prototype.addEventListener = function(type, listener){
-    if (!this.listeners[type]){
-      this.listeners[type] = [];
-    }
-    this.listeners[type].unshift(listener);
-  };
-  EventEmitter.prototype.removeEventListener = function(type, listener){
-    var listeners = this.listeners[type],
-        i = listeners.length;
-    while (i--) {
-      if (listeners[i] === listener) {
-        return listeners.splice(i, 1);
-      }
-    }
-  };
-  EventEmitter.prototype.trigger = function(event){
-    var listeners = this.listeners[event.type] || [],
-        i = listeners.length;
-    while (i--) {
-      listeners[i](event);
-    }
-  };
 
   // extend the media source APIs
 
@@ -60,7 +33,7 @@
       }]
     };
   };
-  videojs.MediaSource.prototype = new EventEmitter();
+  videojs.MediaSource.prototype = new EventTarget();
 
   /**
    * The maximum size in bytes for append operations to the video.js
@@ -269,12 +242,22 @@
 
     };
   };
-  videojs.SourceBuffer.prototype = new EventEmitter();
+  videojs.SourceBuffer.prototype = new EventTarget();
 
   // URL
   videojs.URL = {
     createObjectURL: function(object){
-      var url = objectUrlPrefix + urlCount;
+      var url;
+
+      // if the object isn't an emulated MediaSource, delegate to the
+      // native implementation
+      if (!(object instanceof videojs.MediaSource)) {
+        return window.URL.createObjectURL(object);
+      }
+
+      // build a URL that can be used to map back to the emulated
+      // MediaSource
+      url = objectUrlPrefix + urlCount;
 
       urlCount++;
 

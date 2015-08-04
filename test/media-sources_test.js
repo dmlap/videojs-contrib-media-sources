@@ -285,4 +285,16 @@
     ok(isNaN(mediaSource.duration()), 'duration is NaN');
   });
 
+  module('createObjectURL');
+
+  test('delegates to the native implementation', function() {
+    ok(!(/blob:vjs-media-source\//).test(videojs.URL.createObjectURL(new Blob())),
+       'created a native blob URL');
+  });
+
+  test('emulates a URL for the shim', function() {
+    ok((/blob:vjs-media-source\//).test(videojs.URL.createObjectURL(new videojs.MediaSource())),
+       'created an emulated blob URL');
+  });
+
 })(window, window.document, window.videojs);
